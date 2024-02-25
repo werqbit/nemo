@@ -2,7 +2,7 @@
 // github.com/n0xa | IG: @4x0nn
 
 // -=-=-=-=-=-=- Uncomment the platform you're building for -=-=-=-=-=-=-
-// #define STICK_C_PLUS
+#define STICK_C_PLUS
 // #define STICK_C_PLUS2
 // #define STICK_C
 // #define CARDPUTER
@@ -942,19 +942,35 @@ int rotation = 1;
 
 /// BATTERY INFO ///
 
-#if defined(PWRMGMT)
-  int old_battery = 0;
-
-  void battery_drawmenu(int battery) {
-    DISP.setTextSize(SMALL_TEXT);
-    DISP.fillScreen(BGCOLOR);
-    DISP.setCursor(0, 8, 1);
-    DISP.print(TXT_BATT);
-    DISP.print(battery);
-    DISP.println("%");
-    DISP.println(TXT_EXIT);
+int old_battery=0;
+void battery_drawmenu(int battery) {
+  // Battery bar color definition
+  uint16_t batteryBarColor = BLUE;
+  if(battery < 20) {
+    batteryBarColor = RED;
+  } else if(battery < 60) {
+    batteryBarColor = ORANGE;
+  } else {
+    batteryBarColor = GREEN;
   }
-
+  // Battery bar
+  DISP.fillScreen(BGCOLOR);
+  DISP.drawRect(10, 10, 220, 100, batteryBarColor);
+  DISP.fillRect(10, 10, (220 * battery / 100), 100, batteryBarColor);
+  // Battery percentage
+  DISP.setTextColor(WHITE);
+  DISP.setTextSize(BIG_TEXT);
+  DISP.setCursor(80, 45, 1);
+  DISP.print(battery);
+  DISP.println("%");
+  // Exit text
+  DISP.setCursor(10, 120, 1);
+  DISP.setTextSize(TINY_TEXT);
+  DISP.println(TXT_EXIT);
+  DISP.setTextColor(FGCOLOR, BGCOLOR);
+}
+  
+#if defined(PWRMGMT)
   int get_battery_voltage() {
     return M5.Power.getBatteryLevel();
   }
@@ -972,37 +988,18 @@ int rotation = 1;
     if (battery != old_battery){
       battery_drawmenu(battery);
     }
-    if (check_select_press()) {
-      isSwitching = true;
-      current_proc = 1;
-    }
+    check_select_press();
     old_battery = battery;
   }
 #endif
 
 #ifdef AXP
-  int old_battery=0;
-  void battery_drawmenu(int battery, int b, int c) {
-    DISP.setTextSize(SMALL_TEXT);
-    DISP.fillScreen(BGCOLOR);
-    DISP.setCursor(0, 8, 1);
-    DISP.print(TXT_BATT);
-    DISP.print(battery);
-    DISP.println("%");
-    DISP.print("DeltaB: ");
-    DISP.println(b);
-    DISP.print("DeltaC: ");
-    DISP.println(c);
-    DISP.println("");
-    DISP.println(TXT_EXIT);
-  }
-
   void battery_setup() {
     rstOverride = false;
     float c = M5.Axp.GetVapsData() * 1.4 / 1000;
     float b = M5.Axp.GetVbatData() * 1.1 / 1000;
     int battery = ((b - 3.0) / 1.2) * 100;
-    battery_drawmenu(battery, b, c);
+    battery_drawmenu(battery);
     delay(500); // Prevent switching after menu loads up
   }
 
@@ -1012,47 +1009,15 @@ int rotation = 1;
     float b = M5.Axp.GetVbatData() * 1.1 / 1000;
     int battery = ((b - 3.0) / 1.2) * 100;
     if (battery != old_battery){
-      battery_drawmenu(battery, b, c);
+      battery_drawmenu(battery);
     }
-    if (check_select_press()) {
-      rstOverride = false;
-      isSwitching = true;
-      current_proc = 1;
-    }
+    check_select_press();
     old_battery = battery;
   }
 #endif // AXP
 
 #if defined(CARDPUTER)
   /// BATTERY INFO ///
-  uint8_t oldBattery = 0;
-  void battery_drawmenu(uint8_t battery) {
-    // Battery bar color definition
-    uint16_t batteryBarColor = BLUE;
-    if(battery < 20) {
-      batteryBarColor = RED;
-    } else if(battery < 60) {
-      batteryBarColor = ORANGE;
-    } else {
-      batteryBarColor = GREEN;
-    }
-    // Battery bar
-    DISP.fillScreen(BGCOLOR);
-    DISP.drawRect(10, 10, 220, 100, batteryBarColor);
-    DISP.fillRect(10, 10, (220 * battery / 100), 100, batteryBarColor);
-    // Battery percentage
-    DISP.setTextColor(WHITE);
-    DISP.setTextSize(BIG_TEXT);
-    DISP.setCursor(80, 45, 1);
-    DISP.print(battery);
-    DISP.println("%");
-    // Exit text
-    DISP.setCursor(10, 120, 1);
-    DISP.setTextSize(TINY_TEXT);
-    DISP.println(TXT_EXIT);
-    DISP.setTextColor(FGCOLOR, BGCOLOR);
-  }
-
   void battery_setup() {
     rstOverride = false;
     pinMode(VBAT_PIN, INPUT);
